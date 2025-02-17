@@ -4,7 +4,7 @@ const connection = () => {
   mongoose
     .connect(process.env.MONGO_URL)
     .then(() => {
-      console.log("User service connected to mongodb");
+      console.log("ride service connected to mongodb");
     })
     .catch((err) => {
       console.log("mongodb error: ", err);

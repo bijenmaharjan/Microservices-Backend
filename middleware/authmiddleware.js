@@ -1,40 +1,51 @@
 const jwt = require("jsonwebtoken");
-const userModel = require("../model/usermodel");
+const axios = require("axios");
+require("dotenv").config();
 
-const blackListedtoken = require("../model/blackListedtoken");
-
-module.exports.userAuth = async (req, res, next) => {
+module.exports.rideAuth = async (req, res, next) => {
   try {
     const token = req.cookies.token || req.headers.authorization.split(" ")[1];
+
     if (!token) {
       return res.status(401).json({
         message: "Unauthorized",
       });
     }
 
-    const isblacklisted = await blackListedtoken.find({ token });
-    if (isblacklisted.length) {
-      return res.status(401).json({
-        message: "Unauthorized",
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      if (error instanceof jwt.JsonWebTokenError) {
+        return res.status(401).json({
+          message: "Invalid or expired token",
+        });
+      }
+      return res.status(500).json({
+        message: error.message,
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await userModel.findById(decoded.id);
+    const response = await axios.get(`${process.env.BASE_URL}/user/profile`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    if (!user) {
+    if (!response || !response.data) {
       return res.status(401).json({
-        message: "Unauthorized",
+        message: "User profile fetch failed",
       });
     }
+
+    const user = response.data;
 
     req.user = user;
+    console.log("User profile:", user);
     next();
-  } catch (err) {
-    c;
-    console.log(err);
-    res.status(401).json({
-      message: "Error occured",
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
     });
   }
 };
