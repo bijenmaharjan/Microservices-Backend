@@ -1,6 +1,8 @@
-const userModel = require("../model/user.model");
+const userModel = require("../model/usermodel");
+
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const blackListedtoken = require("../model/blackListedtoken");
 
 module.exports.register = async (req, res) => {
   try {
@@ -14,7 +16,7 @@ module.exports.register = async (req, res) => {
     const newUser = new userModel({
       name,
       email,
-      password,
+      password: hash,
     });
     await newUser.save();
 
@@ -62,12 +64,23 @@ module.exports.login = async (req, res) => {
 module.exports.logout = async (req, res) => {
   try {
     const token = req.cookies.token;
-    await blacklisttokenModel.create({ token });
+    await blackListedtoken.create({ token });
     res.clearCookie("token");
     res.send({
       message: "User logged out Successfully",
     });
   } catch (error) {
     console.log("Error when logged out", error);
+  }
+};
+
+module.exports.profile = async (req, res) => {
+  try {
+    res.send(req.user);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error when getting user profile",
+    });
+    console.log("Error when getting profile", error);
   }
 };
