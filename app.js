@@ -4,6 +4,8 @@ const connect = require("./db/database");
 const captainRoutes = require("./routes/captain-routes");
 
 const cookieParser = require("cookie-parser");
+const RabbitMQ = require("../captain/services/rabbitconnect");
+RabbitMQ.connectRabbitMQ();
 
 require("dotenv").config();
 connect();
