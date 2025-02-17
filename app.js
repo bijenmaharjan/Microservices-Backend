@@ -4,6 +4,8 @@ const connect = require("./db/database");
 const userRoutes = require("./routes/user-routes");
 
 const cookieParser = require("cookie-parser");
+const rabbitconnect = require("../user/services/rabbitconnect");
+rabbitconnect.connectRabbitMQ();
 
 require("dotenv").config();
 connect();

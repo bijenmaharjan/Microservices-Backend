@@ -31,7 +31,6 @@ module.exports.userAuth = async (req, res, next) => {
     req.user = user;
     next();
   } catch (err) {
-    c;
     console.log(err);
     res.status(401).json({
       message: "Error occured",
