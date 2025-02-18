@@ -94,22 +94,33 @@ module.exports.toggleAvailability = async (req, res) => {
   }
 };
 
+// Modified waitForNewRide for better logging and debugging
 module.exports.waitForNewRide = async (req, res) => {
-  // Set timeout for long polling (e.g., 30 seconds)
-  req.setTimeout(30000, () => {
-    res.status(204).end(); // No Content
-  });
+  try {
+    // Set timeout for long polling (e.g., 30 seconds)
+    req.setTimeout(30000, () => {
+      console.log("Request timed out.");
+      res.status(204).end(); // No Content
+    });
 
-  // Add the response object to the pendingRequests array
-  pendingRequests.push(res);
+    console.log("Waiting for new ride...");
+    // Add the response object to the pendingRequests array
+    pendingRequests.push(res);
+  } catch (error) {
+    console.log("Error in waiting for new ride:", error);
+    res.status(500).json({ message: error.message });
+  }
 };
 
 subscribeToQueue("new-ride", (data) => {
   const rideData = JSON.parse(data);
 
+  console.log("Received new ride data from RabbitMQ:", rideData);
+
   // Send the new ride data to all pending requests
   pendingRequests.forEach((res) => {
-    res.json(rideData);
+    console.log("Sending ride data to pending request");
+    res.json({ data: rideData });
   });
 
   // Clear the pending requests

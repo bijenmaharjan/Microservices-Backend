@@ -1,16 +1,36 @@
 const amqp = require("amqplib");
 require("dotenv").config();
 
-// Connection and Channel Setup
+// Connection and Channel Setup with automatic reconnection
 const connectRabbitMQ = async () => {
-  try {
-    const connection = await amqp.connect(process.env.RABBIT_URL);
-    if (connection) console.log("connected to RabbitMQ");
-    const channel = await connection.createChannel();
+  let connection, channel;
+  const maxAttempts = 5;
+  let attempts = 0;
 
-    return { connection, channel };
-  } catch (error) {
-    console.error("Error connecting to RabbitMQ", error);
+  while (attempts < maxAttempts) {
+    try {
+      connection = await amqp.connect(process.env.RABBIT_URL);
+      console.log("Connected to RabbitMQ");
+      channel = await connection.createChannel();
+      connection.on("error", (err) => {
+        console.error("Connection error:", err);
+      });
+      connection.on("close", () => {
+        console.log("RabbitMQ connection closed. Reconnecting...");
+        connectRabbitMQ(); // Retry the connection on close
+      });
+
+      return { connection, channel };
+    } catch (error) {
+      attempts += 1;
+      console.error("Error connecting to RabbitMQ", error);
+      if (attempts >= maxAttempts) {
+        console.error("Max connection attempts reached. Exiting...");
+        process.exit(1); // Exit after max attempts
+      }
+      console.log(`Retrying connection attempt ${attempts}...`);
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // Retry after 5 seconds
+    }
   }
 };
 
